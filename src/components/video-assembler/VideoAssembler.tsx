@@ -5,7 +5,6 @@ import {
   ProcessedScene, 
   ProcessingStatus, 
   VideoSettings, 
-  RESOLUTION_SETTINGS 
 } from '@/types/project';
 import { extractZipFile } from '@/utils/zipExtractor';
 import { categorizeFiles } from '@/utils/fileDetection';
@@ -16,10 +15,12 @@ import { FilesSummary } from './FilesSummary';
 import { SceneList } from './SceneList';
 import { VideoPreview } from './VideoPreview';
 import { ProcessingPanel } from './ProcessingPanel';
-import { ArrowLeft, RefreshCw } from 'lucide-react';
+import { RefreshCw, Languages } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export function VideoAssembler() {
+  const { t, toggleLanguage, isRTL } = useLanguage();
   const [files, setFiles] = useState<ExtractedFile[]>([]);
   const [scenes, setScenes] = useState<ProcessedScene[]>([]);
   const [activeScene, setActiveScene] = useState(0);
@@ -31,6 +32,7 @@ export function VideoAssembler() {
   });
   const [settings, setSettings] = useState<VideoSettings>({
     resolution: '720p',
+    engine: 'canvas',
   });
 
   const handleFileSelect = useCallback(async (file: File) => {
@@ -38,7 +40,7 @@ export function VideoAssembler() {
       setStatus({
         stage: 'extracting',
         progress: 10,
-        message: 'Extracting ZIP file...',
+        message: t.extracting,
       });
 
       const extractedFiles = await extractZipFile(file);
@@ -69,7 +71,7 @@ export function VideoAssembler() {
         message: '',
       });
 
-      toast.success(`Successfully loaded ${processedScenes.length} scenes`);
+      toast.success(`${processedScenes.length} ${t.scenes}`);
     } catch (error) {
       console.error('Error processing ZIP:', error);
       setStatus({
@@ -79,14 +81,14 @@ export function VideoAssembler() {
       });
       toast.error(error instanceof Error ? error.message : 'Failed to process ZIP file');
     }
-  }, []);
+  }, [t]);
 
   const handleProcess = useCallback(async () => {
     try {
       setOutputBlob(null);
       const blob = await processScenes(scenes, settings, setStatus);
       setOutputBlob(blob);
-      toast.success('Video processing complete!');
+      toast.success(t.processingComplete);
     } catch (error) {
       console.error('Processing error:', error);
       setStatus({
@@ -96,14 +98,15 @@ export function VideoAssembler() {
       });
       toast.error(error instanceof Error ? error.message : 'Video processing failed');
     }
-  }, [scenes, settings]);
+  }, [scenes, settings, t]);
 
   const handleDownload = useCallback(() => {
     if (outputBlob) {
-      downloadBlob(outputBlob, 'assembled-video.mp4');
+      const ext = settings.engine === 'canvas' ? 'webm' : 'mp4';
+      downloadBlob(outputBlob, `assembled-video.${ext}`);
       toast.success('Download started!');
     }
-  }, [outputBlob]);
+  }, [outputBlob, settings.engine]);
 
   const handleReset = useCallback(() => {
     setFiles([]);
@@ -126,22 +129,34 @@ export function VideoAssembler() {
                 <span className="text-xl">🎬</span>
               </div>
               <div>
-                <h1 className="text-xl font-bold gradient-text">Video Assembler</h1>
-                <p className="text-xs text-muted-foreground">Browser-based video processing</p>
+                <h1 className="text-xl font-bold gradient-text">{t.appTitle}</h1>
+                <p className="text-xs text-muted-foreground">{t.appSubtitle}</p>
               </div>
             </div>
             
-            {hasScenes && (
+            <div className="flex items-center gap-2">
               <Button
-                onClick={handleReset}
-                variant="outline"
+                onClick={toggleLanguage}
+                variant="ghost"
                 size="sm"
                 className="gap-2"
               >
-                <RefreshCw className="w-4 h-4" />
-                Start Over
+                <Languages className="w-4 h-4" />
+                {t.switchLang}
               </Button>
-            )}
+              
+              {hasScenes && (
+                <Button
+                  onClick={handleReset}
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  {t.startOver}
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -161,7 +176,7 @@ export function VideoAssembler() {
             <FilesSummary files={files} />
             
             {/* Main Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className={`grid grid-cols-1 lg:grid-cols-3 gap-6 ${isRTL ? 'lg:grid-flow-dense' : ''}`}>
               {/* Scene List */}
               <div className="lg:col-span-1">
                 <SceneList
@@ -197,7 +212,7 @@ export function VideoAssembler() {
       <footer className="border-t border-border/30 py-6 mt-12">
         <div className="container mx-auto px-4 text-center">
           <p className="text-sm text-muted-foreground">
-            Powered by FFmpeg WASM • All processing happens in your browser
+            {t.poweredBy} {settings.engine === 'ffmpeg' ? 'FFmpeg WASM' : 'Canvas API'} • {t.allProcessing}
           </p>
         </div>
       </footer>

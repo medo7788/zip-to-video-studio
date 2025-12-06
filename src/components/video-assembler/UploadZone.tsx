@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { Upload, FileArchive, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface UploadZoneProps {
   onFileSelect: (file: File) => void;
@@ -8,6 +9,7 @@ interface UploadZoneProps {
 }
 
 export function UploadZone({ onFileSelect, isLoading }: UploadZoneProps) {
+  const { t } = useLanguage();
   const [isDragging, setIsDragging] = useState(false);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -66,8 +68,8 @@ export function UploadZone({ onFileSelect, isLoading }: UploadZoneProps) {
             </div>
           </div>
           <div className="text-center">
-            <p className="text-xl font-semibold text-foreground">Extracting files...</p>
-            <p className="text-muted-foreground mt-2">Please wait while we process your ZIP file</p>
+            <p className="text-xl font-semibold text-foreground">{t.extracting}</p>
+            <p className="text-muted-foreground mt-2">{t.extractingDesc}</p>
           </div>
         </div>
       ) : (
@@ -90,22 +92,22 @@ export function UploadZone({ onFileSelect, isLoading }: UploadZoneProps) {
           
           <div className="text-center">
             <p className="text-xl font-semibold text-foreground">
-              {isDragging ? 'Drop your ZIP file here' : 'Upload your project ZIP'}
+              {isDragging ? t.dropHere : t.uploadTitle}
             </p>
             <p className="text-muted-foreground mt-2">
-              Drag and drop or click to select a ZIP file
+              {t.uploadDrag}
             </p>
           </div>
           
           <div className="flex flex-wrap gap-3 justify-center mt-4">
             <span className="px-3 py-1.5 rounded-full bg-secondary/50 text-xs text-muted-foreground">
-              Videos: .mp4, .mov, .webm
+              {t.videos}: .mp4, .mov, .webm
             </span>
             <span className="px-3 py-1.5 rounded-full bg-secondary/50 text-xs text-muted-foreground">
-              Audio: .mp3, .wav, .aac
+              {t.audio}: .mp3, .wav, .aac
             </span>
             <span className="px-3 py-1.5 rounded-full bg-secondary/50 text-xs text-muted-foreground">
-              Subtitles: .srt, .vtt
+              {t.subtitles}: .srt, .vtt
             </span>
           </div>
         </div>
