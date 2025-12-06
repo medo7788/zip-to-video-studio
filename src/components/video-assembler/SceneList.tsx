@@ -1,6 +1,7 @@
 import { ProcessedScene } from '@/types/project';
 import { Film, Volume2, Subtitles, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface SceneListProps {
   scenes: ProcessedScene[];
@@ -9,11 +10,13 @@ interface SceneListProps {
 }
 
 export function SceneList({ scenes, activeScene, onSceneClick }: SceneListProps) {
+  const { t } = useLanguage();
+
   return (
     <div className="glass-panel p-6">
       <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
         <Film className="w-5 h-5 text-primary" />
-        Scenes ({scenes.length})
+        {t.scenes} ({scenes.length})
       </h2>
       
       <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
@@ -29,12 +32,12 @@ export function SceneList({ scenes, activeScene, onSceneClick }: SceneListProps)
               key={scene.id}
               onClick={() => onSceneClick?.(index)}
               className={cn(
-                'scene-card w-full text-left cursor-pointer',
+                'scene-card w-full text-start cursor-pointer',
                 isActive && 'border-primary bg-primary/10'
               )}
             >
               <div className="flex items-center justify-between mb-3">
-                <span className="font-medium text-foreground">Scene {scene.id}</span>
+                <span className="font-medium text-foreground">{t.scene} {scene.id}</span>
                 {isComplete ? (
                   <CheckCircle2 className="w-4 h-4 text-success" />
                 ) : (
@@ -48,7 +51,7 @@ export function SceneList({ scenes, activeScene, onSceneClick }: SceneListProps)
                   hasVideo ? 'bg-primary/20 text-primary' : 'bg-secondary text-muted-foreground'
                 )}>
                   <Film className="w-3 h-3" />
-                  <span>{hasVideo ? scene.videoFile?.name.slice(0, 15) : 'No video'}</span>
+                  <span>{hasVideo ? scene.videoFile?.name.slice(0, 15) : t.noVideo}</span>
                 </div>
                 
                 <div className={cn(
@@ -56,7 +59,7 @@ export function SceneList({ scenes, activeScene, onSceneClick }: SceneListProps)
                   hasAudio ? 'bg-glow-secondary/20 text-glow-secondary' : 'bg-secondary text-muted-foreground'
                 )}>
                   <Volume2 className="w-3 h-3" />
-                  <span>{hasAudio ? 'Audio' : 'No audio'}</span>
+                  <span>{hasAudio ? t.audio : t.noAudio}</span>
                 </div>
                 
                 <div className={cn(
@@ -64,7 +67,7 @@ export function SceneList({ scenes, activeScene, onSceneClick }: SceneListProps)
                   hasSubtitles ? 'bg-warning/20 text-warning' : 'bg-secondary text-muted-foreground'
                 )}>
                   <Subtitles className="w-3 h-3" />
-                  <span>{hasSubtitles ? `${scene.subtitles?.length} cues` : 'No subs'}</span>
+                  <span>{hasSubtitles ? `${scene.subtitles?.length} ${t.cues}` : t.noSubs}</span>
                 </div>
               </div>
             </button>

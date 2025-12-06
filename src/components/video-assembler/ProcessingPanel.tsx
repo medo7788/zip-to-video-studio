@@ -2,6 +2,7 @@ import { ProcessingStatus, VideoSettings, RESOLUTION_SETTINGS } from '@/types/pr
 import { Loader2, Download, Settings2, Film, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ProcessingPanelProps {
   status: ProcessingStatus;
@@ -20,6 +21,7 @@ export function ProcessingPanel({
   onDownload,
   hasScenes,
 }: ProcessingPanelProps) {
+  const { t } = useLanguage();
   const isProcessing = ['extracting', 'parsing', 'processing', 'encoding'].includes(status.stage);
   const isComplete = status.stage === 'complete';
 
@@ -27,17 +29,17 @@ export function ProcessingPanel({
     <div className="glass-panel p-6">
       <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
         <Settings2 className="w-5 h-5 text-primary" />
-        Export Settings
+        {t.exportSettings}
       </h2>
       
       {/* Resolution selector */}
-      <div className="mb-6">
-        <label className="text-sm text-muted-foreground mb-2 block">Output Resolution</label>
+      <div className="mb-4">
+        <label className="text-sm text-muted-foreground mb-2 block">{t.outputResolution}</label>
         <div className="flex gap-2">
           {(['720p', '1080p'] as const).map((res) => (
             <button
               key={res}
-              onClick={() => onSettingsChange({ resolution: res })}
+              onClick={() => onSettingsChange({ ...settings, resolution: res })}
               disabled={isProcessing}
               className={cn(
                 'flex-1 px-4 py-3 rounded-lg font-medium transition-all',
@@ -52,6 +54,39 @@ export function ProcessingPanel({
               </span>
             </button>
           ))}
+        </div>
+      </div>
+      
+      {/* Processing Engine */}
+      <div className="mb-6">
+        <label className="text-sm text-muted-foreground mb-2 block">{t.processingEngine}</label>
+        <div className="flex gap-2">
+          <button
+            onClick={() => onSettingsChange({ ...settings, engine: 'canvas' })}
+            disabled={isProcessing}
+            className={cn(
+              'flex-1 px-4 py-3 rounded-lg font-medium transition-all',
+              settings.engine === 'canvas'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+            )}
+          >
+            {t.canvasDesc}
+            <span className="block text-xs opacity-70 mt-0.5">WebM output</span>
+          </button>
+          <button
+            onClick={() => onSettingsChange({ ...settings, engine: 'ffmpeg' })}
+            disabled={isProcessing}
+            className={cn(
+              'flex-1 px-4 py-3 rounded-lg font-medium transition-all',
+              settings.engine === 'ffmpeg'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+            )}
+          >
+            {t.ffmpegDesc}
+            <span className="block text-xs opacity-70 mt-0.5">MP4 output</span>
+          </button>
         </div>
       </div>
       
@@ -70,7 +105,7 @@ export function ProcessingPanel({
           </div>
           {status.currentScene && status.totalScenes && (
             <p className="text-xs text-muted-foreground mt-2">
-              Processing scene {status.currentScene} of {status.totalScenes}
+              {t.scene} {status.currentScene} / {status.totalScenes}
             </p>
           )}
         </div>
@@ -81,10 +116,10 @@ export function ProcessingPanel({
         <div className="mb-6 p-4 rounded-lg bg-success/10 border border-success/30 animate-fade-up">
           <div className="flex items-center gap-2 text-success">
             <CheckCircle2 className="w-5 h-5" />
-            <span className="font-medium">Processing complete!</span>
+            <span className="font-medium">{t.processingComplete}</span>
           </div>
           <p className="text-sm text-muted-foreground mt-1">
-            Your video is ready to download
+            {t.readyToDownload}
           </p>
         </div>
       )}
@@ -97,8 +132,8 @@ export function ProcessingPanel({
             className="flex-1 h-12 text-base"
             variant="default"
           >
-            <Download className="w-5 h-5 mr-2" />
-            Download MP4
+            <Download className="w-5 h-5 me-2" />
+            {t.downloadMp4}
           </Button>
         ) : (
           <Button
@@ -109,13 +144,13 @@ export function ProcessingPanel({
           >
             {isProcessing ? (
               <>
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                Processing...
+                <Loader2 className="w-5 h-5 me-2 animate-spin" />
+                {t.processing}
               </>
             ) : (
               <>
-                <Film className="w-5 h-5 mr-2" />
-                Generate Video
+                <Film className="w-5 h-5 me-2" />
+                {t.generateVideo}
               </>
             )}
           </Button>

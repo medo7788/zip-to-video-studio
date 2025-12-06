@@ -1,9 +1,10 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { ProcessedScene, SubtitleCue } from '@/types/project';
 import { getCurrentSubtitle } from '@/utils/subtitleParser';
-import { Play, Pause, Volume2, VolumeX, Maximize2 } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Slider } from '@/components/ui/slider';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface VideoPreviewProps {
   scenes: ProcessedScene[];
@@ -12,6 +13,7 @@ interface VideoPreviewProps {
 }
 
 export function VideoPreview({ scenes, activeScene, onSceneChange }: VideoPreviewProps) {
+  const { t } = useLanguage();
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -120,7 +122,7 @@ export function VideoPreview({ scenes, activeScene, onSceneChange }: VideoPrevie
   if (!scene?.videoUrl) {
     return (
       <div className="video-player-container aspect-video flex items-center justify-center">
-        <p className="text-muted-foreground">No video available for this scene</p>
+        <p className="text-muted-foreground">{t.noVideoScene}</p>
       </div>
     );
   }
@@ -186,7 +188,7 @@ export function VideoPreview({ scenes, activeScene, onSceneChange }: VideoPrevie
               {isPlaying ? (
                 <Pause className="w-5 h-5 text-primary-foreground" />
               ) : (
-                <Play className="w-5 h-5 text-primary-foreground ml-0.5" />
+                <Play className="w-5 h-5 text-primary-foreground ms-0.5" />
               )}
             </button>
             

@@ -1,26 +1,44 @@
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile, toBlobURL } from '@ffmpeg/util';
 import { ProcessedScene, ProcessingStatus, VideoSettings, RESOLUTION_SETTINGS } from '@/types/project';
+import { processScenesWithCanvas } from './canvasProcessor';
 
 let ffmpegInstance: FFmpeg | null = null;
 let ffmpegLoaded = false;
+let ffmpegLoading = false;
 
 async function getFFmpeg(): Promise<FFmpeg> {
   if (ffmpegInstance && ffmpegLoaded) {
     return ffmpegInstance;
   }
   
-  ffmpegInstance = new FFmpeg();
+  if (ffmpegLoading) {
+    // Wait for existing load
+    while (ffmpegLoading) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    if (ffmpegInstance && ffmpegLoaded) {
+      return ffmpegInstance;
+    }
+  }
   
-  const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm';
+  ffmpegLoading = true;
   
-  await ffmpegInstance.load({
-    coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-    wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-  });
-  
-  ffmpegLoaded = true;
-  return ffmpegInstance;
+  try {
+    ffmpegInstance = new FFmpeg();
+    
+    const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm';
+    
+    await ffmpegInstance.load({
+      coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+      wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+    });
+    
+    ffmpegLoaded = true;
+    return ffmpegInstance;
+  } finally {
+    ffmpegLoading = false;
+  }
 }
 
 export async function processScenes(
@@ -28,6 +46,12 @@ export async function processScenes(
   settings: VideoSettings,
   onProgress: (status: ProcessingStatus) => void
 ): Promise<Blob> {
+  // Use Canvas processor if selected
+  if (settings.engine === 'canvas') {
+    return processScenesWithCanvas(scenes, settings, onProgress);
+  }
+  
+  // FFmpeg processing
   const ffmpeg = await getFFmpeg();
   const { outputWidth, outputHeight } = RESOLUTION_SETTINGS[settings.resolution];
   
@@ -40,7 +64,7 @@ export async function processScenes(
   onProgress({
     stage: 'processing',
     progress: 5,
-    message: 'Preparing files...',
+    message: 'Loading FFmpeg...',
     currentScene: 0,
     totalScenes: validScenes.length,
   });
@@ -64,11 +88,15 @@ export async function processScenes(
     const sceneOutputName = `scene${i}_output.mp4`;
     
     // Write video file
-    await ffmpeg.writeFile(videoInputName, scene.videoFile!.data);
+    if (scene.videoFile?.data) {
+      await ffmpeg.writeFile(videoInputName, scene.videoFile.data);
+    } else {
+      continue;
+    }
     
     let ffmpegArgs: string[] = [];
     
-    if (scene.audioFile) {
+    if (scene.audioFile?.data) {
       const audioInputName = `scene${i}_audio.mp3`;
       await ffmpeg.writeFile(audioInputName, scene.audioFile.data);
       
@@ -99,6 +127,10 @@ export async function processScenes(
     
     await ffmpeg.exec(ffmpegArgs);
     outputFiles.push(sceneOutputName);
+  }
+  
+  if (outputFiles.length === 0) {
+    throw new Error('No scenes were processed successfully');
   }
   
   onProgress({
@@ -141,7 +173,9 @@ export async function processScenes(
   for (const file of outputFiles) {
     try {
       await ffmpeg.deleteFile(file);
-    } catch {}
+    } catch {
+      // Ignore cleanup errors
+    }
   }
   
   onProgress({
