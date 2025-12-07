@@ -13,6 +13,11 @@ export async function processScenesWithCanvas(
   const { outputWidth, outputHeight } = RESOLUTION_SETTINGS[settings.resolution];
   const validScenes = scenes.filter(s => s.videoUrl);
 
+  console.log(`[Canvas Processor] Starting with ${validScenes.length} valid scenes out of ${scenes.length} total`);
+  validScenes.forEach((s, i) => {
+    console.log(`[Scene ${i + 1}] Video: ${s.videoUrl ? 'YES' : 'NO'}, Audio: ${s.audioUrl ? 'YES' : 'NO'}, Subtitles: ${s.subtitles?.length || 0} cues`);
+  });
+
   if (validScenes.length === 0) {
     throw new Error('No valid scenes with video files found');
   }
@@ -60,12 +65,15 @@ export async function processScenesWithCanvas(
 
     const processNextScene = async () => {
       if (currentSceneIndex >= validScenes.length) {
+        console.log(`[Canvas Processor] All ${validScenes.length} scenes processed, stopping recorder`);
         mediaRecorder.stop();
         return;
       }
 
       const scene = validScenes[currentSceneIndex];
       const sceneProgress = Math.round(10 + ((currentSceneIndex + 1) / validScenes.length) * 80);
+
+      console.log(`[Canvas Processor] Processing scene ${currentSceneIndex + 1}/${validScenes.length}`);
 
       onProgress({
         stage: 'processing',
@@ -77,14 +85,18 @@ export async function processScenesWithCanvas(
 
       try {
         await renderSceneToCanvas(scene, canvas, ctx, audioContext, destination);
+        console.log(`[Canvas Processor] Scene ${currentSceneIndex + 1} completed`);
         currentSceneIndex++;
         await processNextScene();
       } catch (error) {
+        console.error(`[Canvas Processor] Error in scene ${currentSceneIndex + 1}:`, error);
         reject(error);
       }
     };
 
     mediaRecorder.onstop = () => {
+      console.log(`[Canvas Processor] MediaRecorder stopped, creating blob from ${chunks.length} chunks`);
+      
       onProgress({
         stage: 'encoding',
         progress: 95,
@@ -92,6 +104,7 @@ export async function processScenesWithCanvas(
       });
 
       const blob = new Blob(chunks, { type: 'video/webm' });
+      console.log(`[Canvas Processor] Final blob size: ${(blob.size / 1024 / 1024).toFixed(2)} MB`);
       
       onProgress({
         stage: 'complete',
@@ -103,6 +116,7 @@ export async function processScenesWithCanvas(
     };
 
     mediaRecorder.onerror = (e) => {
+      console.error('[Canvas Processor] MediaRecorder error:', e);
       reject(new Error('MediaRecorder error: ' + e));
     };
 
@@ -118,43 +132,55 @@ async function renderSceneToCanvas(
   audioContext: AudioContext,
   destination: MediaStreamAudioDestinationNode
 ): Promise<void> {
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     const video = document.createElement('video');
     video.src = scene.videoUrl!;
-    video.muted = true;
+    video.muted = true; // Mute video's own audio
     video.crossOrigin = 'anonymous';
+    video.preload = 'auto';
 
     let audioSource: AudioBufferSourceNode | null = null;
-    let audioLoaded = false;
 
-    // Load audio if exists
+    // Load audio first if exists
     if (scene.audioUrl) {
-      fetch(scene.audioUrl)
-        .then(res => res.arrayBuffer())
-        .then(buffer => audioContext.decodeAudioData(buffer))
-        .then(audioBuffer => {
-          audioSource = audioContext.createBufferSource();
-          audioSource.buffer = audioBuffer;
-          audioSource.connect(destination);
-          audioLoaded = true;
-          
-          // Start audio when video plays
-          if (!video.paused) {
-            audioSource.start(0);
-          }
-        })
-        .catch(console.error);
+      console.log(`[renderScene] Loading audio: ${scene.audioUrl}`);
+      try {
+        const res = await fetch(scene.audioUrl);
+        const buffer = await res.arrayBuffer();
+        const audioBuffer = await audioContext.decodeAudioData(buffer);
+        
+        audioSource = audioContext.createBufferSource();
+        audioSource.buffer = audioBuffer;
+        audioSource.connect(destination);
+        console.log(`[renderScene] Audio loaded, duration: ${audioBuffer.duration.toFixed(2)}s`);
+      } catch (error) {
+        console.error('[renderScene] Audio loading failed:', error);
+      }
     }
 
-    video.onloadeddata = () => {
-      video.play();
-      if (audioSource && audioLoaded) {
-        audioSource.start(0);
-      }
-    };
+    // Wait for video to be ready
+    await new Promise<void>((res, rej) => {
+      video.onloadeddata = () => {
+        console.log(`[renderScene] Video loaded, duration: ${video.duration.toFixed(2)}s`);
+        res();
+      };
+      video.onerror = () => rej(new Error('Failed to load video'));
+      video.load();
+    });
+
+    // Start playback
+    video.play();
+    if (audioSource) {
+      audioSource.start(0);
+      console.log('[renderScene] Audio playback started');
+    }
+
+    let animationId: number;
 
     const drawFrame = () => {
-      if (video.ended) {
+      if (video.ended || video.paused) {
+        cancelAnimationFrame(animationId);
+        console.log('[renderScene] Video ended/paused, stopping frame render');
         resolve();
         return;
       }
@@ -182,54 +208,70 @@ async function renderSceneToCanvas(
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(video, drawX, drawY, drawWidth, drawHeight);
 
-      // Draw subtitles
-      if (scene.subtitles) {
+      // Draw subtitles if available
+      if (scene.subtitles && scene.subtitles.length > 0) {
         const currentTime = video.currentTime;
         const currentSub = scene.subtitles.find(
           sub => currentTime >= sub.startTime && currentTime <= sub.endTime
         );
 
         if (currentSub) {
-          const fontSize = Math.round(canvas.height * 0.04);
-          ctx.font = `${fontSize}px ${currentSub.isRTL ? 'Cairo' : 'Inter'}, sans-serif`;
+          const fontSize = Math.round(canvas.height * 0.045);
+          ctx.font = `bold ${fontSize}px ${currentSub.isRTL ? '"Cairo", "Amiri", "Noto Kufi Arabic"' : '"Inter", "Arial"'}, sans-serif`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'bottom';
           
-          // Draw text background
+          // Draw text shadow/outline for better visibility
+          const textY = canvas.height - 60;
+          
+          // Background bar
           const textWidth = ctx.measureText(currentSub.text).width;
-          const padding = 20;
-          const bgHeight = fontSize + 20;
+          const padding = 24;
+          const bgHeight = fontSize + 24;
           const bgX = (canvas.width - textWidth) / 2 - padding;
-          const bgY = canvas.height - 80 - bgHeight;
+          const bgY = textY - bgHeight + 10;
 
-          ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
-          ctx.fillRect(bgX, bgY, textWidth + padding * 2, bgHeight);
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+          ctx.beginPath();
+          ctx.roundRect(bgX, bgY, textWidth + padding * 2, bgHeight, 8);
+          ctx.fill();
 
-          // Draw text
+          // Text with stroke for better visibility
           ctx.fillStyle = '#ffffff';
+          ctx.strokeStyle = '#000000';
+          ctx.lineWidth = 3;
+          
           if (currentSub.isRTL) {
             ctx.direction = 'rtl';
           }
-          ctx.fillText(currentSub.text, canvas.width / 2, canvas.height - 80);
+          
+          ctx.strokeText(currentSub.text, canvas.width / 2, textY);
+          ctx.fillText(currentSub.text, canvas.width / 2, textY);
           ctx.direction = 'ltr';
         }
       }
 
-      requestAnimationFrame(drawFrame);
+      animationId = requestAnimationFrame(drawFrame);
     };
 
-    video.onplay = () => {
-      drawFrame();
-    };
-
-    video.onerror = () => {
-      reject(new Error('Failed to load video'));
-    };
+    drawFrame();
 
     video.onended = () => {
+      cancelAnimationFrame(animationId);
+      if (audioSource) {
+        try {
+          audioSource.stop();
+        } catch {
+          // Already stopped
+        }
+      }
+      console.log('[renderScene] Scene rendering complete');
       resolve();
     };
 
-    video.load();
+    video.onerror = () => {
+      cancelAnimationFrame(animationId);
+      reject(new Error('Video playback error'));
+    };
   });
 }
