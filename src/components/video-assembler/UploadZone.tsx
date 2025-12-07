@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useRef } from 'react';
 import { Upload, FileArchive, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -11,6 +11,7 @@ interface UploadZoneProps {
 export function UploadZone({ onFileSelect, isLoading }: UploadZoneProps) {
   const { t } = useLanguage();
   const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -42,6 +43,12 @@ export function UploadZone({ onFileSelect, isLoading }: UploadZoneProps) {
     }
   }, [onFileSelect]);
 
+  const handleClick = () => {
+    if (!isLoading && fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
   return (
     <div
       className={cn(
@@ -51,12 +58,14 @@ export function UploadZone({ onFileSelect, isLoading }: UploadZoneProps) {
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
+      onClick={handleClick}
     >
       <input
+        ref={fileInputRef}
         type="file"
         accept=".zip"
         onChange={handleFileInput}
-        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+        className="hidden"
         disabled={isLoading}
       />
       
