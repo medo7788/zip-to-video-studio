@@ -34,14 +34,38 @@ export function getFileName(filepath: string): string {
 }
 
 export function findFileByName(files: ExtractedFile[], targetName: string): ExtractedFile | undefined {
+  if (!targetName) return undefined;
+  
   const targetBase = getBaseName(targetName).toLowerCase();
   const targetFull = getFileName(targetName).toLowerCase();
   
-  return files.find(f => {
+  // Try exact filename match first
+  let found = files.find(f => {
+    const fileName = getFileName(f.path).toLowerCase();
+    return fileName === targetFull;
+  });
+  
+  if (found) return found;
+  
+  // Try base name match (without extension)
+  found = files.find(f => {
+    const baseName = getBaseName(f.path).toLowerCase();
+    return baseName === targetBase;
+  });
+  
+  if (found) return found;
+  
+  // Try partial match (target contains or is contained in filename)
+  found = files.find(f => {
     const fileName = getFileName(f.path).toLowerCase();
     const baseName = getBaseName(f.path).toLowerCase();
-    return fileName === targetFull || baseName === targetBase;
+    return fileName.includes(targetBase) || targetBase.includes(baseName);
   });
+  
+  console.log(`[findFileByName] Looking for: "${targetName}" (base: "${targetBase}"), Found: ${found?.name || 'NOT FOUND'}`);
+  console.log(`[findFileByName] Available files:`, files.map(f => getFileName(f.path)));
+  
+  return found;
 }
 
 export function categorizeFiles(files: ExtractedFile[]): {
