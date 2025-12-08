@@ -1,4 +1,4 @@
-import { ExtractedFile, ProjectConfig, SceneConfig, ProcessedScene } from '@/types/project';
+import { ExtractedFile, ProjectConfig, SceneConfig, ProcessedScene, SubtitleCue } from '@/types/project';
 import { findFileByName, categorizeFiles } from './fileDetection';
 import { createObjectURL, getMimeType } from './zipExtractor';
 import { parseSubtitles } from './subtitleParser';
@@ -28,39 +28,33 @@ export function parseProjectConfig(jsonFile: ExtractedFile): ProjectConfig {
   }
 }
 
-export function matchFilesToScenes(
+export async function matchFilesToScenes(
   config: ProjectConfig,
-  files: ExtractedFile[]
-): ProcessedScene[] {
+  files: ExtractedFile[],
+  allCues?: SubtitleCue[]
+): Promise<ProcessedScene[]> {
   const { videos, audios, subtitles } = categorizeFiles(files);
   const processedScenes: ProcessedScene[] = [];
-  
-  console.log('[matchFilesToScenes] Config scenes:', config.scenes);
-  console.log('[matchFilesToScenes] Available videos:', videos.map(v => v.name));
-  console.log('[matchFilesToScenes] Available audios:', audios.map(a => a.name));
-  console.log('[matchFilesToScenes] Available subtitles:', subtitles.map(s => s.name));
-  
+
+  // First pass: match files and create URLs
   for (const scene of config.scenes) {
     const processed: ProcessedScene = { id: scene.id };
     const sceneId = scene.id;
-    
-    // Try to find video by explicit name OR by scene number pattern
+
+    // Match video
     let videoFile: ExtractedFile | undefined;
     if (scene.video) {
       videoFile = findFileByName(videos, scene.video);
     }
     if (!videoFile) {
-      // Auto-match by scene number pattern: scene_1, scene1, scene-1, etc.
       videoFile = findFileBySceneNumber(videos, sceneId);
     }
-    
     if (videoFile) {
       processed.videoFile = videoFile;
       processed.videoUrl = createObjectURL(videoFile.data, getMimeType(videoFile.name));
-      console.log(`[Scene ${sceneId}] Found video: ${videoFile.name}`);
     }
-    
-    // Try to find audio by explicit name OR by scene number pattern
+
+    // Match audio
     let audioFile: ExtractedFile | undefined;
     if (scene.audio) {
       audioFile = findFileByName(audios, scene.audio);
@@ -68,33 +62,69 @@ export function matchFilesToScenes(
     if (!audioFile) {
       audioFile = findFileBySceneNumber(audios, sceneId);
     }
-    
     if (audioFile) {
       processed.audioFile = audioFile;
       processed.audioUrl = createObjectURL(audioFile.data, getMimeType(audioFile.name));
-      console.log(`[Scene ${sceneId}] Found audio: ${audioFile.name}`);
     }
-    
-    // Try to find subtitle by explicit name OR by scene number pattern
-    let subtitleFile: ExtractedFile | undefined;
-    if (scene.subtitle) {
-      subtitleFile = findFileByName(subtitles, scene.subtitle);
+
+    // Handle per-scene subtitle files if no global cues are provided
+    if (!allCues) {
+      let subtitleFile: ExtractedFile | undefined;
+      if (scene.subtitle) {
+        subtitleFile = findFileByName(subtitles, scene.subtitle);
+      }
+      if (!subtitleFile) {
+        subtitleFile = findFileBySceneNumber(subtitles, sceneId);
+      }
+      if (subtitleFile) {
+        processed.subtitleFile = subtitleFile;
+        const decoder = new TextDecoder('utf-8');
+        const content = decoder.decode(subtitleFile.data);
+        processed.subtitleCues = parseSubtitles(content, subtitleFile.name);
+      }
     }
-    if (!subtitleFile) {
-      subtitleFile = findFileBySceneNumber(subtitles, sceneId);
-    }
-    
-    if (subtitleFile) {
-      processed.subtitleFile = subtitleFile;
-      const decoder = new TextDecoder('utf-8');
-      const content = decoder.decode(subtitleFile.data);
-      processed.subtitles = parseSubtitles(content, subtitleFile.name);
-      console.log(`[Scene ${sceneId}] Found subtitle: ${subtitleFile.name}`);
-    }
-    
+
     processedScenes.push(processed);
   }
+
+  // Second pass: get video durations
+  const durationPromises = processedScenes.map(scene =>
+    scene.videoUrl ? getVideoDuration(scene.videoUrl) : Promise.resolve(0)
+  );
+  const durations = await Promise.all(durationPromises);
+  processedScenes.forEach((scene, index) => {
+    scene.duration = durations[index];
+  });
+
+  // Third pass: distribute cues from a single subtitle file
+  if (allCues && allCues.length > 0) {
+    let timelineCursor = 0;
+    for (const scene of processedScenes) {
+      const sceneDuration = scene.duration ?? 0;
+      if (sceneDuration > 0) {
+        const sceneEndTime = timelineCursor + sceneDuration;
+
+        scene.subtitleCues = allCues
+          .filter(cue => cue.startTime >= timelineCursor && cue.startTime < sceneEndTime)
+          .map(cue => ({
+            ...cue,
+            startTime: cue.startTime - timelineCursor,
+            endTime: cue.endTime - timelineCursor,
+          }));
+
+        timelineCursor = sceneEndTime;
+      }
+    }
+  }
   
+  // Final logging for verification
+  for (const scene of processedScenes) {
+      console.log(`[Scene ${scene.id}] Matched video: ${scene.videoFile?.name}, audio: ${scene.audioFile?.name}, duration: ${scene.duration}`);
+      if (scene.subtitleCues) {
+          console.log(`[Scene ${scene.id}] Assigned ${scene.subtitleCues.length} subtitle cues.`);
+      }
+  }
+
   return processedScenes;
 }
 

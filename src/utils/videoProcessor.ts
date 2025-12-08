@@ -1,7 +1,23 @@
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile, toBlobURL } from '@ffmpeg/util';
-import { ProcessedScene, ProcessingStatus, VideoSettings, RESOLUTION_SETTINGS } from '@/types/project';
+import { ProcessedScene, ProcessingStatus, VideoSettings, RESOLUTION_SETTINGS, SubtitleCue } from '@/types/project';
 import { processScenesWithCanvas } from './canvasProcessor';
+
+// Helper to convert cues to SRT format
+function cuesToSRT(cues: SubtitleCue[]): string {
+  return cues
+    .map((cue, index) => {
+      const formatTime = (time: number) => {
+        const hours = Math.floor(time / 3600);
+        const minutes = Math.floor((time % 3600) / 60);
+        const seconds = Math.floor(time % 60);
+        const milliseconds = Math.round((time - Math.floor(time)) * 1000);
+        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')},${String(milliseconds).padStart(3, '0')}`;
+      };
+      return `${index + 1}\n${formatTime(cue.startTime)} --> ${formatTime(cue.endTime)}\n${cue.text}\n`;
+    })
+    .join('\n');
+}
 
 let ffmpegInstance: FFmpeg | null = null;
 let ffmpegLoaded = false;
@@ -95,30 +111,47 @@ export async function processScenes(
     }
     
     let ffmpegArgs: string[] = [];
-    
+    const videoFilters: string[] = [`scale=${outputWidth}:${outputHeight}:force_original_aspect_ratio=decrease,pad=${outputWidth}:${outputHeight}:(ow-iw)/2:(oh-ih)/2`];
+    const inputs: string[] = ['-i', videoInputName];
+    const maps: string[] = [];
+
+    // Handle audio
     if (scene.audioFile?.data) {
       const audioInputName = `scene${i}_audio.mp3`;
       await ffmpeg.writeFile(audioInputName, scene.audioFile.data);
-      
-      // Combine video with audio
+      inputs.push('-i', audioInputName);
+      maps.push('-map', '0:v:0', '-map', '1:a:0');
+    } else {
+      maps.push('-map', '0:v:0');
+    }
+
+    // Handle subtitles
+    const hasSubtitles = scene.subtitleCues && scene.subtitleCues.length > 0;
+    let subtitleFilename = '';
+    if (hasSubtitles) {
+        subtitleFilename = `scene${i}_subs.srt`;
+        const srtContent = cuesToSRT(scene.subtitleCues!);
+        await ffmpeg.writeFile(subtitleFilename, srtContent);
+        videoFilters.push(`subtitles=${subtitleFilename}`);
+    }
+
+    if (scene.audioFile?.data) {
       ffmpegArgs = [
-        '-i', videoInputName,
-        '-i', audioInputName,
+        ...inputs,
         '-c:v', 'libx264',
         '-c:a', 'aac',
-        '-map', '0:v:0',
-        '-map', '1:a:0',
-        '-vf', `scale=${outputWidth}:${outputHeight}:force_original_aspect_ratio=decrease,pad=${outputWidth}:${outputHeight}:(ow-iw)/2:(oh-ih)/2`,
+        ...maps,
+        '-vf', videoFilters.join(','),
         '-shortest',
         '-y',
         sceneOutputName,
       ];
     } else {
-      // Video only
       ffmpegArgs = [
-        '-i', videoInputName,
+        ...inputs,
         '-c:v', 'libx264',
-        '-vf', `scale=${outputWidth}:${outputHeight}:force_original_aspect_ratio=decrease,pad=${outputWidth}:${outputHeight}:(ow-iw)/2:(oh-ih)/2`,
+        ...maps,
+        '-vf', videoFilters.join(','),
         '-an',
         '-y',
         sceneOutputName,
@@ -127,6 +160,11 @@ export async function processScenes(
     
     await ffmpeg.exec(ffmpegArgs);
     outputFiles.push(sceneOutputName);
+
+    // Clean up subtitle file
+    if (hasSubtitles) {
+        await ffmpeg.deleteFile(subtitleFilename);
+    }
   }
   
   if (outputFiles.length === 0) {
