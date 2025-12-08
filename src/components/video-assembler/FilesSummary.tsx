@@ -7,12 +7,12 @@ interface FilesSummaryProps {
 }
 
 export function FilesSummary({ files }: FilesSummaryProps) {
-  const { videos, audios, subtitles, jsonFiles, sfx } = categorizeFiles(files);
+  const { videos, audios, subtitleFiles, jsonFiles, sfx } = categorizeFiles(files);
 
   const categories = [
     { icon: Film, label: 'Videos', count: videos.length, color: 'text-primary' },
     { icon: Volume2, label: 'Audio', count: audios.length, color: 'text-glow-secondary' },
-    { icon: Subtitles, label: 'Subtitles', count: subtitles.length, color: 'text-warning' },
+    { icon: Subtitles, label: 'Subtitles', count: subtitleFiles.length, color: 'text-warning' },
     { icon: Sparkles, label: 'SFX', count: sfx.length, color: 'text-purple-400' },
     { icon: FileJson, label: 'Config', count: jsonFiles.length, color: 'text-success' },
   ];

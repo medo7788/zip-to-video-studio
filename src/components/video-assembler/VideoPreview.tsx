@@ -26,13 +26,13 @@ export function VideoPreview({ scenes, activeScene, onSceneChange }: VideoPrevie
   const scene = scenes[activeScene];
 
   useEffect(() => {
-    if (scene?.subtitles) {
-      const sub = getCurrentSubtitle(scene.subtitles, currentTime);
+    if (scene?.subtitleCues && scene.subtitleCues.length > 0) {
+      const sub = getCurrentSubtitle(scene.subtitleCues, currentTime);
       setCurrentSubtitle(sub);
     } else {
       setCurrentSubtitle(null);
     }
-  }, [currentTime, scene?.subtitles]);
+  }, [currentTime, scene?.subtitleCues]);
 
   useEffect(() => {
     // Reset when scene changes

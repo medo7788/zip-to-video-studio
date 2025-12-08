@@ -15,7 +15,7 @@ export async function processScenesWithCanvas(
 
   console.log(`[Canvas Processor] Starting with ${validScenes.length} valid scenes out of ${scenes.length} total`);
   validScenes.forEach((s, i) => {
-    console.log(`[Scene ${i + 1}] Video: ${s.videoUrl ? 'YES' : 'NO'}, Audio: ${s.audioUrl ? 'YES' : 'NO'}, Subtitles: ${s.subtitles?.length || 0} cues`);
+    console.log(`[Scene ${i + 1}] Video: ${s.videoUrl ? 'YES' : 'NO'}, Audio: ${s.audioUrl ? 'YES' : 'NO'}, Subtitles: ${s.subtitleCues?.length || 0} cues`);
   });
 
   if (validScenes.length === 0) {
@@ -209,9 +209,9 @@ async function renderSceneToCanvas(
       ctx.drawImage(video, drawX, drawY, drawWidth, drawHeight);
 
       // Draw subtitles if available
-      if (scene.subtitles && scene.subtitles.length > 0) {
+      if (scene.subtitleCues && scene.subtitleCues.length > 0) {
         const currentTime = video.currentTime;
-        const currentSub = scene.subtitles.find(
+        const currentSub = scene.subtitleCues.find(
           sub => currentTime >= sub.startTime && currentTime <= sub.endTime
         );
 

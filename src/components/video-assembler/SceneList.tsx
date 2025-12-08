@@ -23,7 +23,7 @@ export function SceneList({ scenes, activeScene, onSceneClick }: SceneListProps)
         {scenes.map((scene, index) => {
           const hasVideo = !!scene.videoFile;
           const hasAudio = !!scene.audioFile;
-          const hasSubtitles = !!scene.subtitleFile;
+          const hasSubtitles = scene.subtitleCues && scene.subtitleCues.length > 0;
           const isComplete = hasVideo;
           const isActive = activeScene === index;
           
@@ -67,7 +67,7 @@ export function SceneList({ scenes, activeScene, onSceneClick }: SceneListProps)
                   hasSubtitles ? 'bg-warning/20 text-warning' : 'bg-secondary text-muted-foreground'
                 )}>
                   <Subtitles className="w-3 h-3" />
-                  <span>{hasSubtitles ? `${scene.subtitles?.length} ${t.cues}` : t.noSubs}</span>
+                  <span>{hasSubtitles ? `${scene.subtitleCues?.length} ${t.cues}` : t.noSubs}</span>
                 </div>
               </div>
             </button>
