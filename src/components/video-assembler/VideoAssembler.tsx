@@ -4,12 +4,14 @@ import {
   ExtractedFile, 
   ProcessedScene, 
   ProcessingStatus, 
-  VideoSettings, 
+  VideoSettings,
+  SubtitleCue,
 } from '@/types/project';
 import { extractZipFile } from '@/utils/zipExtractor';
 import { categorizeFiles } from '@/utils/fileDetection';
 import { parseProjectConfig, matchFilesToScenes } from '@/utils/configParser';
 import { processScenes, downloadBlob } from '@/utils/videoProcessor';
+import { parseSubtitles } from '@/utils/subtitleParser';
 import { UploadZone } from './UploadZone';
 import { FilesSummary } from './FilesSummary';
 import { SceneList } from './SceneList';
@@ -60,7 +62,18 @@ export function VideoAssembler() {
       }
 
       const config = parseProjectConfig(jsonFiles[0]);
-      const processedScenes = matchFilesToScenes(config, extractedFiles);
+      
+      // Parse shared subtitle file if exists
+      const { subtitleFiles } = categorizeFiles(extractedFiles);
+      let allCues: SubtitleCue[] | undefined;
+      if (subtitleFiles.length > 0) {
+        const decoder = new TextDecoder('utf-8');
+        const content = decoder.decode(subtitleFiles[0].data);
+        allCues = parseSubtitles(content, subtitleFiles[0].name);
+        console.log(`[VideoAssembler] Parsed shared subtitle file with ${allCues.length} cues`);
+      }
+      
+      const processedScenes = await matchFilesToScenes(config, extractedFiles, allCues);
       
       setScenes(processedScenes);
       setActiveScene(0);

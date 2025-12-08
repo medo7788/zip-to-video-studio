@@ -33,7 +33,7 @@ export async function matchFilesToScenes(
   files: ExtractedFile[],
   allCues?: SubtitleCue[]
 ): Promise<ProcessedScene[]> {
-  const { videos, audios, subtitles } = categorizeFiles(files);
+  const { videos, audios, subtitleFiles } = categorizeFiles(files);
   const processedScenes: ProcessedScene[] = [];
 
   // First pass: match files and create URLs
@@ -71,10 +71,10 @@ export async function matchFilesToScenes(
     if (!allCues) {
       let subtitleFile: ExtractedFile | undefined;
       if (scene.subtitle) {
-        subtitleFile = findFileByName(subtitles, scene.subtitle);
+        subtitleFile = findFileByName(subtitleFiles, scene.subtitle);
       }
       if (!subtitleFile) {
-        subtitleFile = findFileBySceneNumber(subtitles, sceneId);
+        subtitleFile = findFileBySceneNumber(subtitleFiles, sceneId);
       }
       if (subtitleFile) {
         processed.subtitleFile = subtitleFile;
