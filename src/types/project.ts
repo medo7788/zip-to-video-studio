@@ -21,7 +21,7 @@ export interface ProcessedScene {
   videoFile?: ExtractedFile;
   audioFile?: ExtractedFile;
   subtitleFile?: ExtractedFile;
-  subtitles?: SubtitleCue[];
+  subtitleCues?: SubtitleCue[];
   videoUrl?: string;
   audioUrl?: string;
   duration?: number;

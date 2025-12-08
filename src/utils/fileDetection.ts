@@ -71,13 +71,13 @@ export function findFileByName(files: ExtractedFile[], targetName: string): Extr
 export function categorizeFiles(files: ExtractedFile[]): {
   videos: ExtractedFile[];
   audios: ExtractedFile[];
-  subtitles: ExtractedFile[];
+  subtitleFiles: ExtractedFile[];
   jsonFiles: ExtractedFile[];
   sfx: ExtractedFile[];
 } {
   const videos: ExtractedFile[] = [];
   const audios: ExtractedFile[] = [];
-  const subtitles: ExtractedFile[] = [];
+  const subtitleFiles: ExtractedFile[] = [];
   const jsonFiles: ExtractedFile[] = [];
   const sfx: ExtractedFile[] = [];
 
@@ -95,7 +95,7 @@ export function categorizeFiles(files: ExtractedFile[]): {
         }
         break;
       case 'subtitle':
-        subtitles.push(file);
+        subtitleFiles.push(file);
         break;
       case 'json':
         jsonFiles.push(file);
@@ -103,7 +103,7 @@ export function categorizeFiles(files: ExtractedFile[]): {
     }
   }
 
-  return { videos, audios, subtitles, jsonFiles, sfx };
+  return { videos, audios, subtitleFiles, jsonFiles, sfx };
 }
 
 export function getMimeType(filename: string): string {
