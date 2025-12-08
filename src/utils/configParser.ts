@@ -98,19 +98,33 @@ export async function matchFilesToScenes(
 
   // Third pass: distribute cues from a single subtitle file
   if (allCues && allCues.length > 0) {
+    console.log(`[configParser] Distributing ${allCues.length} subtitle cues across ${processedScenes.length} scenes`);
     let timelineCursor = 0;
+    
     for (const scene of processedScenes) {
       const sceneDuration = scene.duration ?? 0;
+      console.log(`[Scene ${scene.id}] Duration: ${sceneDuration.toFixed(2)}s, Timeline cursor: ${timelineCursor.toFixed(2)}s`);
+      
       if (sceneDuration > 0) {
         const sceneEndTime = timelineCursor + sceneDuration;
 
-        scene.subtitleCues = allCues
+        // Find cues that fall within this scene's timeline
+        const sceneCues = allCues
           .filter(cue => cue.startTime >= timelineCursor && cue.startTime < sceneEndTime)
           .map(cue => ({
             ...cue,
+            // Adjust timing to be relative to scene start
             startTime: cue.startTime - timelineCursor,
             endTime: cue.endTime - timelineCursor,
           }));
+
+        scene.subtitleCues = sceneCues;
+        console.log(`[Scene ${scene.id}] Assigned ${sceneCues.length} cues (timeline ${timelineCursor.toFixed(2)}s - ${sceneEndTime.toFixed(2)}s)`);
+        
+        // Log first cue for debugging
+        if (sceneCues.length > 0) {
+          console.log(`[Scene ${scene.id}] First cue: "${sceneCues[0].text.substring(0, 30)}..." at ${sceneCues[0].startTime.toFixed(2)}s`);
+        }
 
         timelineCursor = sceneEndTime;
       }
@@ -118,11 +132,9 @@ export async function matchFilesToScenes(
   }
   
   // Final logging for verification
+  console.log('=== Final Scene Summary ===');
   for (const scene of processedScenes) {
-      console.log(`[Scene ${scene.id}] Matched video: ${scene.videoFile?.name}, audio: ${scene.audioFile?.name}, duration: ${scene.duration}`);
-      if (scene.subtitleCues) {
-          console.log(`[Scene ${scene.id}] Assigned ${scene.subtitleCues.length} subtitle cues.`);
-      }
+    console.log(`[Scene ${scene.id}] Video: ${scene.videoFile?.name || 'NONE'}, Audio: ${scene.audioFile?.name || 'NONE'}, Duration: ${scene.duration?.toFixed(2) || 'N/A'}s, Subtitles: ${scene.subtitleCues?.length || 0} cues`);
   }
 
   return processedScenes;
