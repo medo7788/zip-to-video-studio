@@ -1,8 +1,9 @@
 import { ProcessingStatus, VideoSettings, RESOLUTION_SETTINGS } from '@/types/project';
-import { Loader2, Download, Settings2, Film, CheckCircle2 } from 'lucide-react';
+import { Loader2, Download, Settings2, Film, CheckCircle2, Scissors, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { SubtitleSettingsPanel } from './SubtitleSettingsPanel';
 
 interface ProcessingPanelProps {
   status: ProcessingStatus;
@@ -58,7 +59,7 @@ export function ProcessingPanel({
       </div>
       
       {/* Processing Engine */}
-      <div className="mb-6">
+      <div className="mb-4">
         <label className="text-sm text-muted-foreground mb-2 block">{t.processingEngine}</label>
         <div className="flex gap-2">
           <button
@@ -88,6 +89,54 @@ export function ProcessingPanel({
             <span className="block text-xs opacity-70 mt-0.5">MP4 output</span>
           </button>
         </div>
+      </div>
+
+      {/* Sync Mode */}
+      <div className="mb-4">
+        <label className="text-sm text-muted-foreground mb-2 block">{t.syncMode}</label>
+        <div className="flex gap-2">
+          <button
+            onClick={() => onSettingsChange({ ...settings, syncMode: 'trim' })}
+            disabled={isProcessing}
+            className={cn(
+              'flex-1 px-4 py-3 rounded-lg font-medium transition-all',
+              settings.syncMode === 'trim'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+            )}
+          >
+            <div className="flex items-center justify-center gap-2 mb-1">
+              <Scissors className="w-4 h-4" />
+              {t.trimVideo}
+            </div>
+            <span className="block text-xs opacity-70">{t.trimVideoDesc}</span>
+          </button>
+          <button
+            onClick={() => onSettingsChange({ ...settings, syncMode: 'speed' })}
+            disabled={isProcessing}
+            className={cn(
+              'flex-1 px-4 py-3 rounded-lg font-medium transition-all',
+              settings.syncMode === 'speed'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+            )}
+          >
+            <div className="flex items-center justify-center gap-2 mb-1">
+              <Zap className="w-4 h-4" />
+              {t.speedVideo}
+            </div>
+            <span className="block text-xs opacity-70">{t.speedVideoDesc}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Subtitle Settings */}
+      <div className="mb-6 pt-4 border-t border-border/50">
+        <SubtitleSettingsPanel
+          settings={settings.subtitleSettings}
+          onChange={(subtitleSettings) => onSettingsChange({ ...settings, subtitleSettings })}
+          disabled={isProcessing}
+        />
       </div>
       
       {/* Progress */}
