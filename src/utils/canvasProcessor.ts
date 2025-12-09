@@ -254,9 +254,12 @@ async function renderSceneToCanvas(
 
       // Draw subtitles if available
       if (scene.subtitleCues && scene.subtitleCues.length > 0) {
-        const currentTime = video.currentTime;
+        // Apply timing offset (positive = delay subtitles, negative = advance subtitles)
+        const timingOffset = settings.subtitleSettings.timingOffset || 0;
+        const adjustedTime = video.currentTime - timingOffset;
+        
         const currentSub = scene.subtitleCues.find(
-          sub => currentTime >= sub.startTime && currentTime <= sub.endTime
+          sub => adjustedTime >= sub.startTime && adjustedTime <= sub.endTime
         );
 
         if (currentSub) {
