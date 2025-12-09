@@ -42,6 +42,7 @@ export function VideoAssembler() {
       position: 'bottom',
       fontSize: 'medium',
       fontFamily: 'default',
+      timingOffset: 0,
     },
   });
 

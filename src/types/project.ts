@@ -55,6 +55,7 @@ export interface SubtitleSettings {
   position: SubtitlePosition;
   fontSize: 'small' | 'medium' | 'large';
   fontFamily: 'default' | 'arabic' | 'modern';
+  timingOffset: number; // seconds (positive = delay, negative = advance)
 }
 
 export interface VideoSettings {
@@ -132,6 +133,10 @@ export interface Translations {
   previewFinal: string;
   watchVideo: string;
   editSettings: string;
+  timingOffset: string;
+  timingAdvance: string;
+  timingDelay: string;
+  seconds: string;
 }
 
 export const translations: Record<Language, Translations> = {
@@ -190,6 +195,10 @@ export const translations: Record<Language, Translations> = {
     previewFinal: 'Preview Final Video',
     watchVideo: 'Watch Video',
     editSettings: 'Edit Settings',
+    timingOffset: 'Timing Offset',
+    timingAdvance: 'Advance',
+    timingDelay: 'Delay',
+    seconds: 'sec',
   },
   ar: {
     appTitle: 'مُجمّع الفيديو',
@@ -246,5 +255,9 @@ export const translations: Record<Language, Translations> = {
     previewFinal: 'معاينة الفيديو النهائي',
     watchVideo: 'مشاهدة الفيديو',
     editSettings: 'تعديل الإعدادات',
+    timingOffset: 'ضبط التوقيت',
+    timingAdvance: 'تقديم',
+    timingDelay: 'تأخير',
+    seconds: 'ث',
   },
 };

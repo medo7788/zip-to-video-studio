@@ -1,7 +1,8 @@
 import { SubtitleSettings, SubtitlePosition } from '@/types/project';
-import { Type, AlignVerticalJustifyStart, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd } from 'lucide-react';
+import { Type, AlignVerticalJustifyStart, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd, Minus, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { Slider } from '@/components/ui/slider';
 
 interface SubtitleSettingsPanelProps {
   settings: SubtitleSettings;
@@ -105,6 +106,69 @@ export function SubtitleSettingsPanel({ settings, onChange, disabled }: Subtitle
               {label}
             </button>
           ))}
+        </div>
+      </div>
+
+      {/* Timing Offset */}
+      <div>
+        <label className="text-xs text-muted-foreground mb-2 block">{t.timingOffset}</label>
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => onChange({ ...settings, timingOffset: Math.max(-5, (settings.timingOffset || 0) - 0.1) })}
+              disabled={disabled}
+              className={cn(
+                'p-2 rounded-lg bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-all',
+                disabled && 'opacity-50 cursor-not-allowed'
+              )}
+            >
+              <Minus className="w-4 h-4" />
+            </button>
+            
+            <div className="flex-1">
+              <Slider
+                value={[(settings.timingOffset || 0) * 10 + 50]}
+                onValueChange={(value) => onChange({ ...settings, timingOffset: (value[0] - 50) / 10 })}
+                max={100}
+                min={0}
+                step={1}
+                disabled={disabled}
+                className="w-full"
+              />
+            </div>
+            
+            <button
+              onClick={() => onChange({ ...settings, timingOffset: Math.min(5, (settings.timingOffset || 0) + 0.1) })}
+              disabled={disabled}
+              className={cn(
+                'p-2 rounded-lg bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-all',
+                disabled && 'opacity-50 cursor-not-allowed'
+              )}
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          </div>
+          
+          <div className="flex justify-between items-center text-xs">
+            <span className={cn(
+              'px-2 py-1 rounded',
+              (settings.timingOffset || 0) < 0 ? 'bg-primary/20 text-primary' : 'text-muted-foreground'
+            )}>
+              {t.timingAdvance}
+            </span>
+            <span className={cn(
+              'font-mono text-sm font-bold',
+              (settings.timingOffset || 0) !== 0 ? 'text-primary' : 'text-muted-foreground'
+            )}>
+              {(settings.timingOffset || 0) >= 0 ? '+' : ''}{(settings.timingOffset || 0).toFixed(1)} {t.seconds}
+            </span>
+            <span className={cn(
+              'px-2 py-1 rounded',
+              (settings.timingOffset || 0) > 0 ? 'bg-primary/20 text-primary' : 'text-muted-foreground'
+            )}>
+              {t.timingDelay}
+            </span>
+          </div>
         </div>
       </div>
     </div>
