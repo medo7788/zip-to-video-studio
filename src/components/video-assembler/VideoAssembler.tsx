@@ -17,6 +17,7 @@ import { FilesSummary } from './FilesSummary';
 import { SceneList } from './SceneList';
 import { VideoPreview } from './VideoPreview';
 import { ProcessingPanel } from './ProcessingPanel';
+import { FinalVideoPreview } from './FinalVideoPreview';
 import { RefreshCw, Languages } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -27,6 +28,7 @@ export function VideoAssembler() {
   const [scenes, setScenes] = useState<ProcessedScene[]>([]);
   const [activeScene, setActiveScene] = useState(0);
   const [outputBlob, setOutputBlob] = useState<Blob | null>(null);
+  const [showFinalPreview, setShowFinalPreview] = useState(false);
   const [status, setStatus] = useState<ProcessingStatus>({
     stage: 'idle',
     progress: 0,
@@ -35,6 +37,12 @@ export function VideoAssembler() {
   const [settings, setSettings] = useState<VideoSettings>({
     resolution: '720p',
     engine: 'canvas',
+    syncMode: 'trim',
+    subtitleSettings: {
+      position: 'bottom',
+      fontSize: 'medium',
+      fontFamily: 'default',
+    },
   });
 
   const handleFileSelect = useCallback(async (file: File) => {
@@ -99,8 +107,10 @@ export function VideoAssembler() {
   const handleProcess = useCallback(async () => {
     try {
       setOutputBlob(null);
+      setShowFinalPreview(false);
       const blob = await processScenes(scenes, settings, setStatus);
       setOutputBlob(blob);
+      setShowFinalPreview(true); // Show preview after processing
       toast.success(t.processingComplete);
     } catch (error) {
       console.error('Processing error:', error);
@@ -121,11 +131,16 @@ export function VideoAssembler() {
     }
   }, [outputBlob, settings.engine]);
 
+  const handleEditSettings = useCallback(() => {
+    setShowFinalPreview(false);
+  }, []);
+
   const handleReset = useCallback(() => {
     setFiles([]);
     setScenes([]);
     setActiveScene(0);
     setOutputBlob(null);
+    setShowFinalPreview(false);
     setStatus({ stage: 'idle', progress: 0, message: '' });
   }, []);
 
@@ -181,6 +196,15 @@ export function VideoAssembler() {
             <UploadZone 
               onFileSelect={handleFileSelect}
               isLoading={status.stage === 'extracting' || status.stage === 'parsing'}
+            />
+          </div>
+        ) : showFinalPreview && outputBlob ? (
+          // Show final video preview
+          <div className="max-w-4xl mx-auto space-y-6">
+            <FinalVideoPreview
+              videoBlob={outputBlob}
+              onDownload={handleDownload}
+              onEditSettings={handleEditSettings}
             />
           </div>
         ) : (

@@ -44,14 +44,34 @@ export interface ProcessingStatus {
 
 export type ProcessingEngine = 'ffmpeg' | 'canvas';
 
+// Video/Audio sync mode
+export type SyncMode = 'trim' | 'speed';
+
+// Subtitle position
+export type SubtitlePosition = 'top' | 'center' | 'bottom';
+
+// Subtitle settings
+export interface SubtitleSettings {
+  position: SubtitlePosition;
+  fontSize: 'small' | 'medium' | 'large';
+  fontFamily: 'default' | 'arabic' | 'modern';
+}
+
 export interface VideoSettings {
   resolution: '720p' | '1080p';
   engine: ProcessingEngine;
+  syncMode: SyncMode;
+  subtitleSettings: SubtitleSettings;
 }
 
 export const RESOLUTION_SETTINGS: Record<'720p' | '1080p', { outputWidth: number; outputHeight: number }> = {
   '720p': { outputWidth: 1280, outputHeight: 720 },
   '1080p': { outputWidth: 1920, outputHeight: 1080 },
+};
+
+export const SUBTITLE_FONT_SIZES: Record<'720p' | '1080p', Record<'small' | 'medium' | 'large', number>> = {
+  '720p': { small: 24, medium: 32, large: 48 },
+  '1080p': { small: 36, medium: 48, large: 72 },
 };
 
 // Translations
@@ -90,6 +110,28 @@ export interface Translations {
   allProcessing: string;
   filesSummary: string;
   switchLang: string;
+  // New translations
+  syncMode: string;
+  trimVideo: string;
+  trimVideoDesc: string;
+  speedVideo: string;
+  speedVideoDesc: string;
+  subtitleSettings: string;
+  subtitlePosition: string;
+  positionTop: string;
+  positionCenter: string;
+  positionBottom: string;
+  fontSize: string;
+  fontSmall: string;
+  fontMedium: string;
+  fontLarge: string;
+  fontFamily: string;
+  fontDefault: string;
+  fontArabic: string;
+  fontModern: string;
+  previewFinal: string;
+  watchVideo: string;
+  editSettings: string;
 }
 
 export const translations: Record<Language, Translations> = {
@@ -126,6 +168,28 @@ export const translations: Record<Language, Translations> = {
     allProcessing: 'All processing happens in your browser',
     filesSummary: 'Files Summary',
     switchLang: 'عربي',
+    // New translations
+    syncMode: 'Video/Audio Sync',
+    trimVideo: 'Trim Video',
+    trimVideoDesc: 'Cut video to match audio length',
+    speedVideo: 'Speed Video',
+    speedVideoDesc: 'Speed up video to match audio',
+    subtitleSettings: 'Subtitle Settings',
+    subtitlePosition: 'Position',
+    positionTop: 'Top',
+    positionCenter: 'Center',
+    positionBottom: 'Bottom',
+    fontSize: 'Font Size',
+    fontSmall: 'Small',
+    fontMedium: 'Medium',
+    fontLarge: 'Large',
+    fontFamily: 'Font Style',
+    fontDefault: 'Default',
+    fontArabic: 'Arabic',
+    fontModern: 'Modern',
+    previewFinal: 'Preview Final Video',
+    watchVideo: 'Watch Video',
+    editSettings: 'Edit Settings',
   },
   ar: {
     appTitle: 'مُجمّع الفيديو',
@@ -160,5 +224,27 @@ export const translations: Record<Language, Translations> = {
     allProcessing: 'تتم جميع المعالجة في متصفحك',
     filesSummary: 'ملخص الملفات',
     switchLang: 'English',
+    // New translations
+    syncMode: 'تزامن الفيديو/الصوت',
+    trimVideo: 'قص الفيديو',
+    trimVideoDesc: 'قص الفيديو ليتناسب مع طول الصوت',
+    speedVideo: 'تسريع الفيديو',
+    speedVideoDesc: 'تسريع الفيديو ليتناسب مع الصوت',
+    subtitleSettings: 'إعدادات الترجمة',
+    subtitlePosition: 'موقع الترجمة',
+    positionTop: 'أعلى',
+    positionCenter: 'وسط',
+    positionBottom: 'أسفل',
+    fontSize: 'حجم الخط',
+    fontSmall: 'صغير',
+    fontMedium: 'متوسط',
+    fontLarge: 'كبير',
+    fontFamily: 'نوع الخط',
+    fontDefault: 'افتراضي',
+    fontArabic: 'عربي',
+    fontModern: 'عصري',
+    previewFinal: 'معاينة الفيديو النهائي',
+    watchVideo: 'مشاهدة الفيديو',
+    editSettings: 'تعديل الإعدادات',
   },
 };

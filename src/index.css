@@ -103,6 +103,10 @@
     font-family: 'Cairo', 'Inter', sans-serif;
     direction: rtl;
   }
+
+  .font-arabic {
+    font-family: 'Cairo', 'Amiri', sans-serif;
+  }
 }
 
 @layer components {
