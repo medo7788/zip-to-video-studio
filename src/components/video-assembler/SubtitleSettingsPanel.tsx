@@ -19,10 +19,12 @@ export function SubtitleSettingsPanel({ settings, onChange, disabled }: Subtitle
     { value: 'bottom', icon: AlignVerticalJustifyEnd, label: t.positionBottom },
   ];
 
-  const fontSizes: { value: 'small' | 'medium' | 'large'; label: string }[] = [
+  const fontSizes: { value: 'small' | 'medium' | 'large' | 'xlarge' | 'xxlarge'; label: string }[] = [
     { value: 'small', label: t.fontSmall },
     { value: 'medium', label: t.fontMedium },
     { value: 'large', label: t.fontLarge },
+    { value: 'xlarge', label: t.fontXLarge },
+    { value: 'xxlarge', label: t.fontXXLarge },
   ];
 
   const fontFamilies: { value: 'default' | 'arabic' | 'modern'; label: string }[] = [

@@ -52,9 +52,11 @@ export type SyncMode = 'trim' | 'speed';
 export type SubtitlePosition = 'top' | 'center' | 'bottom';
 
 // Subtitle settings
+export type SubtitleFontSize = 'small' | 'medium' | 'large' | 'xlarge' | 'xxlarge';
+
 export interface SubtitleSettings {
   position: SubtitlePosition;
-  fontSize: 'small' | 'medium' | 'large';
+  fontSize: SubtitleFontSize;
   fontFamily: 'default' | 'arabic' | 'modern';
   timingOffset: number; // seconds (positive = delay, negative = advance)
 }
@@ -71,9 +73,9 @@ export const RESOLUTION_SETTINGS: Record<'720p' | '1080p', { outputWidth: number
   '1080p': { outputWidth: 1920, outputHeight: 1080 },
 };
 
-export const SUBTITLE_FONT_SIZES: Record<'720p' | '1080p', Record<'small' | 'medium' | 'large', number>> = {
-  '720p': { small: 24, medium: 32, large: 48 },
-  '1080p': { small: 36, medium: 48, large: 72 },
+export const SUBTITLE_FONT_SIZES: Record<'720p' | '1080p', Record<SubtitleFontSize, number>> = {
+  '720p': { small: 32, medium: 48, large: 64, xlarge: 80, xxlarge: 96 },
+  '1080p': { small: 48, medium: 72, large: 96, xlarge: 120, xxlarge: 144 },
 };
 
 // Translations
@@ -127,6 +129,8 @@ export interface Translations {
   fontSmall: string;
   fontMedium: string;
   fontLarge: string;
+  fontXLarge: string;
+  fontXXLarge: string;
   fontFamily: string;
   fontDefault: string;
   fontArabic: string;
@@ -189,6 +193,8 @@ export const translations: Record<Language, Translations> = {
     fontSmall: 'Small',
     fontMedium: 'Medium',
     fontLarge: 'Large',
+    fontXLarge: 'X-Large',
+    fontXXLarge: 'XX-Large',
     fontFamily: 'Font Style',
     fontDefault: 'Default',
     fontArabic: 'Arabic',
@@ -249,6 +255,8 @@ export const translations: Record<Language, Translations> = {
     fontSmall: 'صغير',
     fontMedium: 'متوسط',
     fontLarge: 'كبير',
+    fontXLarge: 'كبير جداً',
+    fontXXLarge: 'ضخم',
     fontFamily: 'نوع الخط',
     fontDefault: 'افتراضي',
     fontArabic: 'عربي',
