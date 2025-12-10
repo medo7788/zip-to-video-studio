@@ -87,46 +87,56 @@ export async function matchFilesToScenes(
     processedScenes.push(processed);
   }
 
-  // Second pass: get video durations
-  const durationPromises = processedScenes.map(scene =>
+  // Second pass: get video and audio durations
+  const videoDurationPromises = processedScenes.map(scene =>
     scene.videoUrl ? getVideoDuration(scene.videoUrl) : Promise.resolve(0)
   );
-  const durations = await Promise.all(durationPromises);
+  const audioDurationPromises = processedScenes.map(scene =>
+    scene.audioUrl ? getAudioDuration(scene.audioUrl) : Promise.resolve(0)
+  );
+  
+  const [videoDurations, audioDurations] = await Promise.all([
+    Promise.all(videoDurationPromises),
+    Promise.all(audioDurationPromises)
+  ]);
+  
   processedScenes.forEach((scene, index) => {
-    scene.duration = durations[index];
+    scene.duration = videoDurations[index];
+    scene.audioDuration = audioDurations[index];
   });
 
   // Third pass: distribute cues from a single subtitle file
+  // IMPORTANT: Subtitles are synced with AUDIO, not video!
   if (allCues && allCues.length > 0) {
     console.log(`[configParser] Distributing ${allCues.length} subtitle cues across ${processedScenes.length} scenes`);
-    let timelineCursor = 0;
+    let audioTimelineCursor = 0;
     
     for (const scene of processedScenes) {
-      const sceneDuration = scene.duration ?? 0;
-      console.log(`[Scene ${scene.id}] Duration: ${sceneDuration.toFixed(2)}s, Timeline cursor: ${timelineCursor.toFixed(2)}s`);
+      // Use audio duration for subtitle timing (subtitles sync with audio, not video)
+      const sceneAudioDuration = scene.audioDuration ?? scene.duration ?? 0;
+      console.log(`[Scene ${scene.id}] Video: ${scene.duration?.toFixed(2)}s, Audio: ${sceneAudioDuration.toFixed(2)}s, Audio cursor: ${audioTimelineCursor.toFixed(2)}s`);
       
-      if (sceneDuration > 0) {
-        const sceneEndTime = timelineCursor + sceneDuration;
+      if (sceneAudioDuration > 0) {
+        const sceneAudioEndTime = audioTimelineCursor + sceneAudioDuration;
 
-        // Find cues that fall within this scene's timeline
+        // Find cues that fall within this scene's AUDIO timeline
         const sceneCues = allCues
-          .filter(cue => cue.startTime >= timelineCursor && cue.startTime < sceneEndTime)
+          .filter(cue => cue.startTime >= audioTimelineCursor && cue.startTime < sceneAudioEndTime)
           .map(cue => ({
             ...cue,
             // Adjust timing to be relative to scene start
-            startTime: cue.startTime - timelineCursor,
-            endTime: cue.endTime - timelineCursor,
+            startTime: cue.startTime - audioTimelineCursor,
+            endTime: cue.endTime - audioTimelineCursor,
           }));
 
         scene.subtitleCues = sceneCues;
-        console.log(`[Scene ${scene.id}] Assigned ${sceneCues.length} cues (timeline ${timelineCursor.toFixed(2)}s - ${sceneEndTime.toFixed(2)}s)`);
+        console.log(`[Scene ${scene.id}] Assigned ${sceneCues.length} cues (audio timeline ${audioTimelineCursor.toFixed(2)}s - ${sceneAudioEndTime.toFixed(2)}s)`);
         
-        // Log first cue for debugging
         if (sceneCues.length > 0) {
           console.log(`[Scene ${scene.id}] First cue: "${sceneCues[0].text.substring(0, 30)}..." at ${sceneCues[0].startTime.toFixed(2)}s`);
         }
 
-        timelineCursor = sceneEndTime;
+        audioTimelineCursor = sceneAudioEndTime;
       }
     }
   }
@@ -175,5 +185,23 @@ export function getVideoDuration(videoUrl: string): Promise<number> {
     };
     
     video.src = videoUrl;
+  });
+}
+
+export function getAudioDuration(audioUrl: string): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const audio = document.createElement('audio');
+    audio.preload = 'metadata';
+    
+    audio.onloadedmetadata = () => {
+      resolve(audio.duration);
+      audio.src = '';
+    };
+    
+    audio.onerror = () => {
+      reject(new Error('Failed to load audio metadata'));
+    };
+    
+    audio.src = audioUrl;
   });
 }

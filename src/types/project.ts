@@ -25,6 +25,7 @@ export interface ProcessedScene {
   videoUrl?: string;
   audioUrl?: string;
   duration?: number;
+  audioDuration?: number;
 }
 
 export interface SubtitleCue {
