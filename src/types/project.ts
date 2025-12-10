@@ -142,6 +142,8 @@ export interface Translations {
   timingAdvance: string;
   timingDelay: string;
   seconds: string;
+  subtitlePreview: string;
+  sampleSubtitleText: string;
 }
 
 export const translations: Record<Language, Translations> = {
@@ -206,6 +208,8 @@ export const translations: Record<Language, Translations> = {
     timingAdvance: 'Advance',
     timingDelay: 'Delay',
     seconds: 'sec',
+    subtitlePreview: 'Live Preview',
+    sampleSubtitleText: 'Sample subtitle text',
   },
   ar: {
     appTitle: 'مُجمّع الفيديو',
@@ -268,5 +272,7 @@ export const translations: Record<Language, Translations> = {
     timingAdvance: 'تقديم',
     timingDelay: 'تأخير',
     seconds: 'ث',
+    subtitlePreview: 'معاينة مباشرة',
+    sampleSubtitleText: 'نص ترجمة تجريبي',
   },
 };
