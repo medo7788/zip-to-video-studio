@@ -18,6 +18,7 @@ import { SceneList } from './SceneList';
 import { VideoPreview } from './VideoPreview';
 import { ProcessingPanel } from './ProcessingPanel';
 import { FinalVideoPreview } from './FinalVideoPreview';
+import { SubtitleEditor } from './SubtitleEditor';
 import { RefreshCw, Languages } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -145,6 +146,10 @@ export function VideoAssembler() {
     setStatus({ stage: 'idle', progress: 0, message: '' });
   }, []);
 
+  const handleScenesUpdate = useCallback((updatedScenes: ProcessedScene[]) => {
+    setScenes(updatedScenes);
+  }, []);
+
   const hasScenes = scenes.length > 0;
 
   return (
@@ -230,6 +235,12 @@ export function VideoAssembler() {
                   scenes={scenes}
                   activeScene={activeScene}
                   onSceneChange={setActiveScene}
+                />
+                
+                {/* Subtitle Editor */}
+                <SubtitleEditor
+                  scenes={scenes}
+                  onScenesUpdate={handleScenesUpdate}
                 />
                 
                 <ProcessingPanel
