@@ -144,6 +144,14 @@ export interface Translations {
   seconds: string;
   subtitlePreview: string;
   sampleSubtitleText: string;
+  subtitleEditor: string;
+  adjustAllTiming: string;
+  noSubsScene: string;
+  subtitleText: string;
+  startTime: string;
+  endTime: string;
+  cancel: string;
+  save: string;
 }
 
 export const translations: Record<Language, Translations> = {
@@ -210,6 +218,14 @@ export const translations: Record<Language, Translations> = {
     seconds: 'sec',
     subtitlePreview: 'Live Preview',
     sampleSubtitleText: 'Sample subtitle text',
+    subtitleEditor: 'Subtitle Editor',
+    adjustAllTiming: 'Adjust All Timing',
+    noSubsScene: 'No subtitles for this scene',
+    subtitleText: 'Subtitle Text',
+    startTime: 'Start Time',
+    endTime: 'End Time',
+    cancel: 'Cancel',
+    save: 'Save',
   },
   ar: {
     appTitle: 'مُجمّع الفيديو',
@@ -274,5 +290,13 @@ export const translations: Record<Language, Translations> = {
     seconds: 'ث',
     subtitlePreview: 'معاينة مباشرة',
     sampleSubtitleText: 'نص ترجمة تجريبي',
+    subtitleEditor: 'محرر الترجمة',
+    adjustAllTiming: 'ضبط توقيت الكل',
+    noSubsScene: 'لا توجد ترجمات لهذا المشهد',
+    subtitleText: 'نص الترجمة',
+    startTime: 'وقت البداية',
+    endTime: 'وقت النهاية',
+    cancel: 'إلغاء',
+    save: 'حفظ',
   },
 };

@@ -178,16 +178,20 @@ export function FinalVideoPreview({ videoBlob, onDownload, onEditSettings }: Fin
                 <Settings className="w-4 h-4" />
                 {t.editSettings}
               </Button>
-              <Button
-                onClick={onDownload}
-                variant="default"
-                size="sm"
-                className="gap-2"
-              >
-                <Download className="w-4 h-4" />
-                {t.downloadMp4}
-              </Button>
             </div>
+          </div>
+          
+          {/* Download Button - Below Controls */}
+          <div className="mt-4 pt-4 border-t border-border/30">
+            <Button
+              onClick={onDownload}
+              variant="default"
+              size="lg"
+              className="w-full gap-2 text-lg py-6"
+            >
+              <Download className="w-5 h-5" />
+              {t.downloadMp4}
+            </Button>
           </div>
         </div>
       </div>
